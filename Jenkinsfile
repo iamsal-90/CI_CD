@@ -2,8 +2,6 @@ pipeline {
     agent any
 
     tools {
-        // معرفی ابزار Maven که در داکر فایل جنکینز نصب کردیم
-        // اگر در جنکینز نام خاصی براش نذاشتی، خودش از مسیر سیستم استفاده میکنه
         maven 'M3' 
     }
 
@@ -18,7 +16,6 @@ pipeline {
         stage('Build') {
             steps {
                 echo '🛠️ Compiling the Java application...'
-                // اجرای دستور کامپایل ماون
                 sh 'mvn clean compile'
             }
         }
@@ -26,16 +23,35 @@ pipeline {
         stage('Test') {
             steps {
                 echo '🧪 Running Unit Tests...'
-                // اجرای تست‌های پروژه
                 sh 'mvn test'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                echo '🔍 Analyzing code with SonarQube...'
+                // این دستور محیط رو متصل می‌کنه به سروری که در جنکینز ست کردیم
+                withSonarQubeEnv('SonarQube-Server') {
+                    // اجرای اسکنر سونار از طریق ماون
+                    sh 'mvn sonar:sonar -Dsonar.projectKey=simple-java-app'
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                echo '🚦 Checking SonarQube Quality Gate...'
+                // این دستور منتظر می‌مونه تا سونار نتیجه رو برگردونه (پاس یا فیل)
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
             }
         }
     }
 
     post {
         always {
-            echo '🧹 Cleaning up workspace or archiving results...'
-            // اینجا بعداً گزارش تست‌ها رو آرشیو می‌کنیم
+            echo '🧹 Cleaning up workspace...'
         }
         success {
             echo '🎉 Pipeline completed successfully!'

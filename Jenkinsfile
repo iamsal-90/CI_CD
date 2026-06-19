@@ -29,10 +29,7 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                echo '🔍 Analyzing code with SonarQube...'
-                // این دستور محیط رو متصل می‌کنه به سروری که در جنکینز ست کردیم
                 withSonarQubeEnv('SonarQube-Server') {
-                    // اجرای اسکنر سونار از طریق ماون
                     sh 'mvn sonar:sonar -Dsonar.projectKey=simple-java-app'
                 }
             }
@@ -40,10 +37,21 @@ pipeline {
 
         stage('Quality Gate') {
             steps {
-                echo '🚦 Checking SonarQube Quality Gate...'
-                // این دستور منتظر می‌مونه تا سونار نتیجه رو برگردونه (پاس یا فیل)
                 timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
+                    waitForQualityGate abortPipeline: true, apiAutojoin: true
+                }
+            }
+        }
+
+        stage('Deploy to Nexus') {
+            steps {
+                echo '📦 Uploading Artifact to Nexus Repository...'
+                // این تگ اطلاعات ورود رو امن از جنکینز می‌خونه و به متغیر تبدیل می‌کنه
+                withCredentials([usernamePassword(credentialsId: 'nexus-credentials', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
+                    
+                    // برای اینکه در نکسوس ریلیز آپلود کنیم، پسوند SNAPSHOT رو موقتاً برمی‌داریم تا نسخه ریلیز بشه
+                    // اجرای دستور پکیج و دیپلوی ماون با تزریق اطلاعات ورود
+                    sh 'mvn clean deploy -DskipTests -DaltDeploymentRepository=nexus-releases::default::http://nexus:8081/repository/maven-releases/ -Dusername=${NEXUS_USER} -Dpassword=${NEXUS_PASS}'
                 }
             }
         }

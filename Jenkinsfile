@@ -43,20 +43,15 @@ pipeline {
             }
         }
 
-        stage('Deploy to Nexus') {
+	stage('Deploy to Nexus') {
             steps {
                 echo '📦 Uploading Artifact to Nexus Repository...'
-                // این تگ اطلاعات ورود رو امن از جنکینز می‌خونه و به متغیر تبدیل می‌کنه
                 withCredentials([usernamePassword(credentialsId: 'nexus-credentials', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
                     
-                    // برای اینکه در نکسوس ریلیز آپلود کنیم، پسوند SNAPSHOT رو موقتاً برمی‌داریم تا نسخه ریلیز بشه
-                    // اجرای دستور پکیج و دیپلوی ماون با تزریق اطلاعات ورود
-                    sh 'mvn clean deploy -DskipTests -DaltDeploymentRepository=nexus-releases::default::http://nexus:8081/repository/maven-releases/ -Dusername=${NEXUS_USER} -Dpassword=${NEXUS_PASS}'
+                    sh 'mvn clean deploy -DskipTests -Dusername=${NEXUS_USER} -Dpassword=${NEXUS_PASS}'
                 }
             }
         }
-    }
-
     post {
         always {
             echo '🧹 Cleaning up workspace...'

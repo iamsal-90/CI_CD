@@ -2,10 +2,11 @@ pipeline {
     agent any
 
     tools {
-        maven 'M3' 
+        maven 'M3'
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 echo '📥 Fetching code from GitHub...'
@@ -43,25 +44,40 @@ pipeline {
             }
         }
 
-	stage('Deploy to Nexus') {
+        stage('Deploy to Nexus') {
             steps {
                 echo '📦 Uploading Artifact to Nexus Repository...'
-                withCredentials([usernamePassword(credentialsId: 'nexus-credentials', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
-                    
-                    sh 'mvn clean deploy -DskipTests -Dusername=${NEXUS_USER} -Dpassword=${NEXUS_PASS}'
+
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'nexus-credentials',
+                        usernameVariable: 'NEXUS_USER',
+                        passwordVariable: 'NEXUS_PASS'
+                    )
+                ]) {
+                    sh '''
+                        mvn clean deploy \
+                          -DskipTests \
+                          -Dusername=$NEXUS_USER \
+                          -Dpassword=$NEXUS_PASS
+                    '''
                 }
             }
         }
+    }
+
     post {
         always {
             echo '🧹 Cleaning up workspace...'
+            cleanWs()
         }
+
         success {
             echo '🎉 Pipeline completed successfully!'
         }
+
         failure {
             echo '❌ Pipeline failed! Check the logs.'
         }
     }
- }
 }

@@ -46,25 +46,12 @@ pipeline {
 
         stage('Deploy to Nexus') {
             steps {
-                echo '📦 Uploading Artifact to Nexus Repository...'
-
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'nexus-credentials',
-                        usernameVariable: 'NEXUS_USER',
-                        passwordVariable: 'NEXUS_PASS'
-                    )
-                ]) {
-                    sh '''
-                        mvn clean deploy \
-                          -DskipTests \
-                          -Dusername=$NEXUS_USER \
-                          -Dpassword=$NEXUS_PASS
-                    '''
-                }
+                echo '📦 Deploying artifact to Nexus...'
+                sh 'mvn clean deploy -DskipTests'
             }
         }
-    }
+
+    } // پایان stages
 
     post {
         always {
@@ -80,4 +67,5 @@ pipeline {
             echo '❌ Pipeline failed! Check the logs.'
         }
     }
-}
+
+} // پایان pipeline
